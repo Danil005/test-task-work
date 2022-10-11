@@ -1,0 +1,561 @@
+openapi: 3.0.3
+info:
+  title: Тестовое задание / API
+  description: |-
+  contact:
+    email: danilsidorenko00@gmail.com
+  version: 1.0.0
+tags:
+  - name: users
+    description: Пользователи
+  - name: cars
+    description: Транспортные средства
+  - name: oauth
+    description: Авторизация OAuth
+paths:
+  /api/v1/users/users.create:
+    post:
+      tags:
+        - users
+      summary: Создать нового пользователя
+      description: |-
+        Позволяет создавать нового пользователя. Если не указан Bearer токен, то
+        создаться новый аккаунт. Если указан Bearer токен, то создаться новый аккаунт 
+        и привязан будет к вашем. Другими словами: вы - главный, созданны аккаунт - ваш подчиненный.
+      requestBody:
+        description: Пример запроса
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/User'
+        required: true
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserResponse'          
+        '422':
+          description: UNPROCESSABLE_ENTITY
+      security:
+        - bearerAuth: []
+  
+  /api/v1/users/users.me:
+    get:
+      tags:
+        - users
+      summary: Показать информацию о пользователи
+      description: |-
+        Позволяет просмотреть информацию о себе (авторизованном пользователе)
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MeResponse'          
+        '401':
+          description: HTTP_UNAUTHORIZED
+      security:
+        - bearerAuth: []
+            
+  /api/v1/cars/cars.create:
+    post:
+      tags:
+        - cars
+      summary: Создать новый транспорт
+      description: |-
+        Создает новое транспортное средство. Если у пользователя уже есть, то выдаст ошибку.
+        
+        Указать `user_id` может только root-пользователь.
+      requestBody:
+        description: Пример запроса
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Car'
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CarResponse'          
+        '401':
+          description: HTTP_UNAUTHORIZED
+          
+        '303':
+          description: SEE_OTHER
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Car303Response' 
+      security:
+        - bearerAuth: []
+            
+  /api/v1/cars/cars.get:
+    get:
+      tags:
+        - cars
+      summary: Показать информацию о транспортном средстве
+      description: |-
+        Вы моежете получить информацию о транспортном средстве по `car_id`
+        
+        Или не указывать его, таким образом выдаст информацию о вашем автомобиле.
+        
+        Если вы не ROOT-пользователь, то можете получить ТОЛЬКО свое транспортное средство.
+      parameters:
+        - in: query
+          name: car_id
+          description: ID-транспорта
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CarGetResponse'          
+        '401':
+          description: HTTP_UNAUTHORIZED
+          
+        '403':
+          description: HTTP_FORBIDDEN
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CarGet403Response'      
+          
+      security:
+        - bearerAuth: []
+  
+  /api/v1/cars/cars.delete:
+    delete:
+      tags:
+        - cars
+      summary: Удалить транспортное средство
+      description: |-
+        Вы можете удалить транспортное средство указав `car_id`
+        
+        Если вы не ROOT-пользователь, то можете удалить ТОЛЬКО свое транспортное средство.
+      parameters:
+        - in: query
+          name: car_id
+          description: ID-транспорта
+          required: true
+          schema:
+            type: integer
+        - in: query
+          name: force
+          description: Удалить полностью
+          required: false
+          schema:
+            type: boolean
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CarDeleteResponse'          
+        '401':
+          description: HTTP_UNAUTHORIZED
+          
+        '403':
+          description: HTTP_FORBIDDEN
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CarDelete403Response'      
+          
+      security:
+        - bearerAuth: []
+  
+  /api/v1/cars/cars.update:
+    put:
+      tags:
+        - cars
+      summary: Изменить информацию о транспортном средстве
+      description: |-
+        Вы можете изменить информацию о транспортном средство указав `user_id`
+        
+        Таким образом, привязанный транспорт к пользователю, будет изменен.
+        
+        Если вы не ROOT-пользователь, то можете изменить ТОЛЬКО свое транспортное средство.
+      requestBody:
+        description: Пример запроса
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CarUpdate'
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CarUpdateResponse'          
+        '401':
+          description: HTTP_UNAUTHORIZED
+          
+        '403':
+          description: HTTP_FORBIDDEN
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CarUpdate403Response'      
+          
+      security:
+        - bearerAuth: []
+            
+  
+  /oauth/token:
+    post:
+      tags:
+        - oauth
+      summary: Авторизовать пользователя
+      requestBody:
+        description: Пример запроса
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/OauthBody'
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OauthResponse'       
+        '400':
+          description: Error operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Oauth400Response'      
+        '401':
+          description: HTTP_UNAUTHORIZED
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Oauth401Response'   
+          
+      security:
+        - bearerAuth: []
+            
+            
+components:
+  schemas:
+    User:
+      type: object
+      properties:
+        name:
+          type: string
+          example: Данил Сидоренко
+        email:
+          type: string
+          example: danilsidorenko00@gmail.com
+        password:
+          type: string
+          example: '12345'
+          
+    Car:
+      type: object
+      properties:
+        fabricator:
+          type: string
+          example: BMW
+        model:
+          type: string
+          example: X6
+        user_id:
+          type: integer
+          example: 1
+          
+    CarResponse:
+      properties:
+        success:
+          type: boolean
+          example: true
+        message:
+          type: string
+          example: You have successfully created a car
+        payload:
+          type: object
+          properties:
+            id:
+              type: integer
+              example: 1
+            user_id:
+              type: integer
+              example: 1
+            fabricator:
+              type: string
+              example: BMW
+            model:
+              type: string
+              example: X6
+            updated_at:
+              type: string
+              example: 2022-10-11T15:27:36.000000Z
+            created_at:
+              type: string
+              example: 2022-10-11T15:27:36.000000Z
+    Car303Response:
+      properties:
+        success:
+          type: boolean
+          example: false
+        message:
+          type: string
+          example: The user already has a car
+        payload:
+          type: object
+          
+    CarGetResponse:
+      properties:
+        success:
+          type: boolean
+          example: true
+        message:
+          type: string
+          example: You have successfully received car
+        payload:
+          type: object
+          properties:
+            id:
+              type: integer
+              example: 1
+            user_id:
+              type: integer
+              example: 1
+            fabricator:
+              type: string
+              example: BMW
+            model:
+              type: string
+              example: X6
+            deleted_at:
+              type: string
+              example: 2022-10-11T15:27:36.000000Z
+            updated_at:
+              type: string
+              example: 2022-10-11T15:27:36.000000Z
+            created_at:
+              type: string
+              example: 2022-10-11T15:27:36.000000Z
+              
+    CarGet403Response:
+      properties:
+        success:
+          type: boolean
+          example: false
+        message:
+          type: string
+          example: You can't get information about someone else's car
+        payload:
+          type: object
+          
+    CarDeleteResponse:
+      properties:
+        success:
+          type: boolean
+          example: true
+        message:
+          type: string
+          example: You have successfully deleted a car
+        payload:
+          type: object
+    
+    CarDelete403Response:
+      properties:
+        success:
+          type: boolean
+          example: false
+        message:
+          type: string
+          example: You can delete your car only
+        payload:
+          type: object
+          
+    CarUpdate:
+      properties:
+        user_id:
+          type: integer
+          example: 1
+        fabricator:
+          type: string
+          example: Audi
+        model:
+          type: string
+          example: Q6
+          
+    CarUpdateResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+        message:
+          type: string
+          example: You have successfully updated a car
+        payload:
+          type: object
+          properties:
+            fabricator:
+              type: string
+              example: Audi
+            model:
+              type: string
+              example: Q6
+    
+    CarUpdate403Response:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: false
+        message:
+          type: string
+          example: You can change information about your car only
+        payload:
+          type: object
+          
+    UserResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+        message:
+          type: string
+          example: User successfully created
+        payload:
+          type: object
+          properties:
+            id:
+              type: integer
+              example: 1
+            name:
+              type: string
+              example: Данил Сидоренко
+            email:
+              type: string
+              example: danilsidorenko00@gmail.com
+            is_root:
+              type: boolean
+              example: true
+            user_id:
+              type: integer
+              example: null
+            updated_at:
+              type: string
+              example: 2022-10-11T15:27:36.000000Z
+            created_at:
+              type: string
+              example: 2022-10-11T15:27:36.000000Z  
+    MeResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+        message:
+          type: string
+          example: User successfully created
+        payload:
+          type: object
+          properties:
+            id:
+              type: integer
+              example: 1
+            name:
+              type: string
+              example: Данил Сидоренко
+            email:
+              type: string
+              example: danilsidorenko00@gmail.com
+            email_verified_at:
+              type: string
+              example: 2022-10-11T15:36:38.000000Z
+            is_root:
+              type: boolean
+              example: true
+            user_id:
+              type: integer
+              example: null
+            updated_at:
+              type: string
+              example: 2022-10-11T15:27:36.000000Z
+            created_at:
+              type: string
+              example: 2022-10-11T15:27:36.000000Z  
+    OauthBody:
+      type: object
+      properties:
+        grant_type: 
+          type: string
+          example: password
+        client_id:
+          type: string
+          example: 977a2538-aa1b-4039-b31f-0424a7d66dca
+        client_secret:
+          type: string
+          example: QT9QouYPbXnYNci88U9k6kS61D4a4tQaPU4r3BdQ
+        username:
+          type: string
+          example: danilsidorenko00@gmail.com
+        password:
+          type: string
+          example: 12345678
+          
+    OauthResponse:
+      type: object
+      properties:
+        token_type: 
+          type: string
+          example: Bearer
+        expires_in:
+          type: integer
+          example: 31536000
+        access_token:
+          type: string
+          example: eyJ0eXAiOiJKV1QiLCJhbGciOiJSUzI1NiJ9.eyJhdWQiOiI5NzdhMj...
+        refresh_token:
+          type: string
+          example: def50200fcef15e4f458d949558f939b7ed5bc881267ac9453f910c1a7c80f7bfd...
+          
+    Oauth400Response:
+      type: object
+      properties:
+        error: 
+          type: string
+          example: invalid_grant
+        error_description:
+          type: string
+          example: The user credentials were incorrect.
+        message:
+          type: string
+          example: The user credentials were incorrect.
+    
+    Oauth401Response:
+      type: object
+      properties:
+        error: 
+          type: string
+          example: invalid_client
+        error_description:
+          type: string
+          example: Client authentication failed
+        message:
+          type: string
+          example: Client authentication failed
+          
+  securitySchemes:
+    bearerAuth: 
+      type: http
+      scheme: bearer
+      bearerFormat: JWT

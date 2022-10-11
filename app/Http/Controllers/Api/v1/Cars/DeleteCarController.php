@@ -39,7 +39,6 @@ class DeleteCarController extends Controller
                 trans('api.cars.delete.success.force') :
                 trans('api.cars.delete.success.soft')
             )
-            ->setPayload($car)
             ->send();
     }
 }

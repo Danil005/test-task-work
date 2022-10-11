@@ -42,6 +42,18 @@ class CarsTest extends TestCase
         ]);
 
         /**
+         * Проверяем, что мы не можем добавить новое транспортное
+         * средство пользователю, у которого оно уже есть
+         */
+        $response = $this->post(route('cars.create', [
+            'fabricator' => $fabricator,
+            'model' => $model
+        ]));
+
+        $response->assertStatus(Status::HTTP_SEE_OTHER)->assertJsonFragment([
+            'message' => trans('api.cars.create.errors.already_have_car_user')
+        ]);
+        /**
          * Проверяем создание транспортного средства со стороны
          * привязанного пользователя
          */
@@ -207,11 +219,13 @@ class CarsTest extends TestCase
             'user_id' => $this->user->id
         ]);
 
-        $model = 'i7';
+        $model = 'Q6';
+        $fabricator = 'Audi';
 
         $response = $this->put(route('cars.update', [
             'user_id' => $this->user->id,
-            'model' => $model
+            'model' => $model,
+            'fabricator' => $fabricator
         ]));
 
         $response->assertStatus(Status::HTTP_OK)->assertJsonFragment([
